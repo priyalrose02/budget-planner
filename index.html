@@ -55,6 +55,9 @@ tr.tot td{font-weight:700;border-bottom:0}
 .card small{display:block;color:var(--mute)}
 .note{font-size:13px;color:var(--mute);margin-top:10px}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.btn{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:6px;font-weight:600;text-decoration:none;background:var(--acc);color:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#06252A}}
+.keyrow{display:grid;grid-template-columns:1fr auto;gap:8px}
 @media print{.noprint,header p{display:none}main{display:block}section{break-inside:avoid}}
 @media(prefers-reduced-motion:no-preference){.bar i{transition:width .3s}}
 </style>
@@ -87,6 +90,11 @@ tr.tot td{font-weight:700;border-bottom:0}
 const EX={income:3000,bills:[["Rent",1250],["Utilities",140],["Phone",55],["Car insurance",110],["Internet",60],["Subscriptions",35]],
 ess:[["Groceries",400],["Gas and transport",150]],wants:[["Eating out",60],["Fun and hobbies",40],["Personal care",20]],
 debts:[["Store card",600,27,30],["Visa",2400,24,72],["Credit card B",900,19,35],["Medical bill",1100,0,40]],ef:75,extra:428,method:"snowball"};
+/* ===== SET THESE 2 VALUES ===== */
+const CONFIG={FREE_USES:2,
+ GUMROAD_URL:"https://priyalrose5.gumroad.com/l/unhebw",
+ GUMROAD_PRODUCT_ID:"6F0E4C97-B72A4E69-A11BF6C4-AF6517E7"};
+/* ================================ */
 let S;
 try{S=JSON.parse(localStorage.getItem("bpg1"))}catch(e){}
 if(!S||!S.bills)S=JSON.parse(JSON.stringify(EX));
@@ -123,6 +131,7 @@ function sim(method,extra){
 const when=m=>{const t=new Date();t.setMonth(t.getMonth()+m);return t.toLocaleDateString("en-US",{month:"long",year:"numeric"})};
 
 function calc(){
+ if(!generated){$("out").innerHTML=gate();bindGate();return}
  const inc=num(S.income),sum=a=>a.reduce((t,r)=>t+num(r[1]),0);
  const bills=sum(S.bills),ess=sum(S.ess),wants=sum(S.wants),mins=S.debts.reduce((t,r)=>t+num(r[3]),0);
  const ef=num(S.ef),extra=num(S.extra);
@@ -158,11 +167,41 @@ function calc(){
    <p class="note">${Math.abs(diff)<1?"Both methods cost about the same here, so choose the one that keeps you motivated.":(diff>0?`${lab(S.method)} costs about ${$$(diff)} less in interest than ${lab(o)}.`:`${lab(o)} would save about ${$$(-diff)} in interest. Snowball gives earlier wins; avalanche saves the most money.`)}</p></section>`;
   }
  }
- h+=`<div class="tools noprint"><button class="pri" onclick="window.print()">Print or save as PDF</button></div><p class="note">Estimates use monthly compounding and fixed payments. Lender figures will differ slightly. This is a planning tool, not financial advice. Your numbers stay in your browser.</p>`;
+ h+=accessLine()+`<div class="tools noprint"><button class="pri" onclick="window.print()">Print or save as PDF</button></div><p class="note">Estimates use monthly compounding and fixed payments. Lender figures will differ slightly. This is a planning tool, not financial advice. Your numbers stay in your browser.</p>`;
  $("out").innerHTML=h;
  const b=$("toDebt");if(b)b.onclick=()=>{S.extra=extra+left;fillTop();save();calc()};
 }
 
+let pro=false,checking=false,generated=false,msg="";
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}};
+let uses=parseInt(LS("bpg_uses"))||0;
+const left=()=>Math.max(0,CONFIG.FREE_USES-uses);
+async function verify(key){
+ if(CONFIG.GUMROAD_PRODUCT_ID.includes("YOUR-"))throw new Error("setup");
+ const r=await fetch("https://api.gumroad.com/v2/licenses/verify",{method:"POST",body:new URLSearchParams({product_id:CONFIG.GUMROAD_PRODUCT_ID,license_key:key,increment_uses_count:"false"})});
+ const d=await r.json(),p=d.purchase||{};
+ return d.success===true&&!p.subscription_ended_at&&!p.subscription_failed_at&&!p.refunded&&!p.chargebacked;
+}
+function gate(){
+ if(checking)return `<section><h2>Checking your membership...</h2></section>`;
+ const keybox=pro?"":`<label class="f" for="key" style="margin-top:14px">Already subscribed? Enter your license key</label><div class="keyrow"><input id="key" placeholder="Paste license key" autocomplete="off"><button id="act">Activate</button></div><p class="note" id="kmsg">${msg}</p>`;
+ if(pro||left()>0)return `<section><h2>Ready to build your plan?</h2><p class="hint">Fill in your numbers, then generate. ${pro?"Pro member: unlimited plans.":`You have <b>${left()}</b> free plan${left()===1?"":"s"} left.`} Editing numbers after generating is free during the same visit.</p><button class="pri" id="gen">Generate my plan</button>${keybox}</section>`;
+ return `<section><h2>You have used your ${CONFIG.FREE_USES} free plans</h2><p class="hint">Subscribe for unlimited plans. Your license key arrives by email after purchase. Paste it below to unlock.</p><a class="btn" href="${CONFIG.GUMROAD_URL}" target="_blank" rel="noopener">Subscribe</a>${keybox}</section>`;
+}
+function bindGate(){
+ const g=$("gen");if(g)g.onclick=()=>{if(!pro){if(left()<=0)return;uses++;LS("bpg_uses",String(uses))}generated=true;calc()};
+ const a=$("act");if(a)a.onclick=async()=>{
+  const k=$("key").value.trim();if(!k)return;$("kmsg").textContent="Checking...";
+  try{if(await verify(k)){pro=true;LS("bpg_key",k);msg="";}else msg="That key is not active. Check the key and your subscription.";}
+  catch(e){msg=e.message==="setup"?"Subscriptions are not set up yet.":"Could not reach the license server. Try again."}
+  calc();
+ };
+}
+const accessLine=()=>`<p class="note noprint">${pro?"Pro member":`Free plans left: ${left()}`}</p>`;
+function initAccess(){
+ const k=LS("bpg_key");if(!k)return;checking=true;
+ verify(k).then(v=>{pro=v;if(!v)LS("bpg_key","")}).catch(e=>{pro=e.message!=="setup"}).finally(()=>{checking=false;if(!generated)calc()});
+}
 document.addEventListener("input",e=>{
  const t=e.target;
  if(t.id==="inc")S.income=num(t.value);else if(t.id==="ef")S.ef=num(t.value);else if(t.id==="ex")S.extra=num(t.value);
@@ -178,7 +217,7 @@ document.addEventListener("click",e=>{
 });
 $("reset").onclick=()=>{S=JSON.parse(JSON.stringify(EX));renderLists();fillTop();save();calc()};
 $("clear").onclick=()=>{S={income:0,bills:[["",0]],ess:[["",0]],wants:[["",0]],debts:[["",0,0,0]],ef:0,extra:0,method:"snowball"};renderLists();fillTop();save();calc()};
-renderLists();fillTop();calc();
+renderLists();fillTop();initAccess();calc();
 </script>
 </body>
 </html>
