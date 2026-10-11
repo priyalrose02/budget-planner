@@ -57,6 +57,16 @@ tr.tot td{font-weight:700;border-bottom:0}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .btn{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:6px;font-weight:600;text-decoration:none;background:var(--acc);color:#fff}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#06252A}}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+@media(max-width:480px){.plans{grid-template-columns:1fr}}
+.plan{border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center}
+.plan.best{border:2px solid var(--acc)}
+.plan small{display:block;font-weight:600;color:var(--mute)}
+.plan .big span{font-size:14px;color:var(--mute);font-weight:400;font-family:"Source Sans 3",system-ui,sans-serif}
+.plan p{margin:2px 0 10px;color:var(--mute);font-size:14px}
+.tag{display:inline-block;background:var(--acc2);color:#12263A;font-size:12px;font-weight:700;border-radius:20px;padding:2px 10px;margin-bottom:6px}
+.feat{margin:8px 0 0;padding-left:20px;font-size:15px}
+details summary{cursor:pointer;font-weight:600;color:var(--acc);margin-top:6px}
 .keyrow{display:grid;grid-template-columns:1fr auto;gap:8px}
 @media print{.noprint,header p{display:none}main{display:block}section{break-inside:avoid}}
 @media(prefers-reduced-motion:no-preference){.bar i{transition:width .3s}}
@@ -92,6 +102,7 @@ ess:[["Groceries",400],["Gas and transport",150]],wants:[["Eating out",60],["Fun
 debts:[["Store card",600,27,30],["Visa",2400,24,72],["Credit card B",900,19,35],["Medical bill",1100,0,40]],ef:75,extra:428,method:"snowball"};
 /* ===== SET THESE 2 VALUES ===== */
 const CONFIG={FREE_USES:2,
+ MONTHLY_PRICE:"$3",YEARLY_PRICE:"$13",
  GUMROAD_URL:"https://priyalrose5.gumroad.com/l/unhebw",
  GUMROAD_PRODUCT_ID:"6F0E4C97-B72A4E69-A11BF6C4-AF6517E7"};
 /* ================================ */
@@ -182,11 +193,14 @@ async function verify(key){
  const d=await r.json(),p=d.purchase||{};
  return d.success===true&&!p.subscription_ended_at&&!p.subscription_failed_at&&!p.refunded&&!p.chargebacked;
 }
+function plans(){const u=CONFIG.GUMROAD_URL;return `<div class="plans"><div class="plan"><small>Monthly</small><div class="big">${CONFIG.MONTHLY_PRICE}<span> /month</span></div><p>Cancel anytime</p><a class="btn" href="${u}" target="_blank" rel="noopener">Choose monthly</a></div><div class="plan best"><span class="tag">Best value: save 64%</span><small>Yearly</small><div class="big">${CONFIG.YEARLY_PRICE}<span> /year</span></div><p>About $1.08 per month</p><a class="btn" href="${u}" target="_blank" rel="noopener">Choose yearly</a></div></div>`}
 function gate(){
  if(checking)return `<section><h2>Checking your membership...</h2></section>`;
- const keybox=pro?"":`<label class="f" for="key" style="margin-top:14px">Already subscribed? Enter your license key</label><div class="keyrow"><input id="key" placeholder="Paste license key" autocomplete="off"><button id="act">Activate</button></div><p class="note" id="kmsg">${msg}</p>`;
- if(pro||left()>0)return `<section><h2>Ready to build your plan?</h2><p class="hint">Fill in your numbers, then generate. ${pro?"Pro member: unlimited plans.":`You have <b>${left()}</b> free plan${left()===1?"":"s"} left.`} Editing numbers after generating is free during the same visit.</p><button class="pri" id="gen">Generate my plan</button>${keybox}</section>`;
- return `<section><h2>You have used your ${CONFIG.FREE_USES} free plans</h2><p class="hint">Subscribe for unlimited plans. Your license key arrives by email after purchase. Paste it below to unlock.</p><a class="btn" href="${CONFIG.GUMROAD_URL}" target="_blank" rel="noopener">Subscribe</a>${keybox}</section>`;
+ const keybox=pro?"":`<details ${(left()<=0||msg)?"open":""}><summary>Already subscribed? Enter your license key</summary><div class="keyrow" style="margin-top:10px"><input id="key" aria-label="License key" placeholder="Paste license key" autocomplete="off"><button id="act">Activate</button></div><p class="note" id="kmsg">${msg}</p></details>`;
+ const feat=`<ul class="feat"><li>Unlimited budget and debt payoff plans</li><li>Snowball vs. avalanche comparison</li><li>Printable plan, works on phone and desktop</li></ul>`;
+ if(pro)return `<section><h2>Ready to build your plan?</h2><p class="hint">Pro member: unlimited plans. Editing numbers after generating is free during the same visit.</p><button class="pri" id="gen">Generate my plan</button></section>`;
+ if(left()>0)return `<section><h2>Ready to build your plan?</h2><p class="hint">Fill in your numbers, then generate. You have <b>${left()}</b> free plan${left()===1?"":"s"} left. Editing numbers after generating is free during the same visit.</p><button class="pri" id="gen">Generate my plan</button></section><section><h2>Unlock unlimited plans</h2>${feat}${plans()}${keybox}</section>`;
+ return `<section><h2>You have used your ${CONFIG.FREE_USES} free plans</h2><p class="hint">Subscribe to keep building plans. Your license key arrives by email after purchase.</p>${feat}${plans()}${keybox}</section>`;
 }
 function bindGate(){
  const g=$("gen");if(g)g.onclick=()=>{if(!pro){if(left()<=0)return;uses++;LS("bpg_uses",String(uses))}generated=true;calc()};
