@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Budget Plan Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F8FA;--card:#fff;--ink:#12263A;--mute:#5B6B7A;--line:#D8E1E8;--acc:#0E7C86;--acc2:#E8A33D;--need:#12263A;--want:#E8A33D;--goal:#0E7C86;--bad:#B3261E;--good:#1B7A3E;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D1822;--card:#15242F;--ink:#E7EEF3;--mute:#93A5B3;--line:#27394A;--acc:#3FBFC9;--need:#8FB0CC;--goal:#3FBFC9;--bad:#FF8A80;--good:#6FD39A}}
+:root[data-theme="dark"]{--bg:#0D1822;--card:#15242F;--ink:#E7EEF3;--mute:#93A5B3;--line:#27394A;--acc:#3FBFC9;--need:#8FB0CC;--goal:#3FBFC9;--bad:#FF8A80;--good:#6FD39A}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;margin:0;line-height:1.15}
+header{padding:28px 20px 8px;max-width:1100px;margin:0 auto}
+h1{font-size:clamp(28px,5vw,42px);letter-spacing:-.02em}
+header p{color:var(--mute);margin:8px 0 0;max-width:60ch}
+main{max-width:1100px;margin:0 auto;padding:16px 20px 48px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+h2{font-size:19px;margin-bottom:4px}
+.hint{color:var(--mute);font-size:14px;margin:0 0 12px}
+.row{display:grid;gap:8px;margin-bottom:8px;align-items:center}
+.r2{grid-template-columns:1fr 110px 36px}
+.r4{grid-template-columns:1fr 84px 62px 70px 32px}
+@media(max-width:480px){.r4{grid-template-columns:1fr 1fr 1fr 1fr 30px}}
+input,select{width:100%;min-height:40px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.cap{font-size:13px;color:var(--mute);font-weight:600}
+label.f{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+button{font:inherit;cursor:pointer;border-radius:6px;min-height:40px;padding:0 14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button.x{padding:0;width:34px;color:var(--mute)}
+button.add{border-style:dashed;color:var(--acc);font-weight:600}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) button.pri{color:#06252A}}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.status{border-radius:8px;padding:12px 14px;font-weight:600;margin-bottom:14px;border:1px solid var(--line)}
+.status.ok{border-color:var(--good);color:var(--good)}.status.bad{border-color:var(--bad);color:var(--bad)}
+.status .sub{display:block;font-weight:400;color:var(--ink);margin-top:2px}
+.bar{display:flex;height:22px;border-radius:5px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;margin-bottom:12px}
+.leg b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+th{font-size:13px;color:var(--mute)}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.tot td{font-weight:700;border-bottom:0}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px}
+.card.pick{border:2px solid var(--acc)}
+.big{font-family:"Bricolage Grotesque",sans-serif;font-size:26px;font-weight:700}
+.card small{display:block;color:var(--mute)}
+.note{font-size:13px;color:var(--mute);margin-top:10px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+@media print{.noprint,header p{display:none}main{display:block}section{break-inside:avoid}}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .3s}}
+</style>
+</head>
+<body>
+<header>
+<h1>Budget Plan Generator</h1>
+<p>Enter your income, bills and debts. Get a budget where every dollar has a job, plus a debt payoff plan with your debt-free date.</p>
+</header>
+<main>
+<div class="noprint">
+<section><h2>Income</h2><p class="hint">Monthly take-home pay, after taxes.</p>
+<label class="f" for="inc">Monthly income ($)</label><input id="inc" type="number" min="0" inputmode="decimal"></section>
+<section><h2>Fixed bills</h2><p class="hint">Rent, utilities, phone, insurance, subscriptions.</p><div id="L_bills"></div><button class="add" data-add="bills">Add bill</button></section>
+<section><h2>Everyday essentials</h2><p class="hint">Groceries, gas, anything you must spend on each month.</p><div id="L_ess"></div><button class="add" data-add="ess">Add essential</button></section>
+<section><h2>Wants</h2><p class="hint">Eating out, fun, hobbies, personal care.</p><div id="L_wants"></div><button class="add" data-add="wants">Add want</button></section>
+<section><h2>Debts</h2><p class="hint">Balance, yearly interest rate (APR) and minimum payment.</p>
+<div class="row r4 cap" aria-hidden="true"><span>Name</span><span>Balance</span><span>APR %</span><span>Minimum</span><span></span></div>
+<div id="L_debts"></div><button class="add" data-add="debts">Add debt</button></section>
+<section><h2>Goals</h2>
+<div class="two"><div><label class="f" for="ef">Emergency fund ($/mo)</label><input id="ef" type="number" min="0" inputmode="decimal"></div>
+<div><label class="f" for="ex">Extra debt payment ($/mo)</label><input id="ex" type="number" min="0" inputmode="decimal"></div></div>
+<div style="margin-top:12px"><label class="f" for="meth">Debt method</label>
+<select id="meth"><option value="snowball">Snowball: smallest balance first</option><option value="avalanche">Avalanche: highest interest first</option></select></div>
+<div class="tools"><button id="reset">Reset to example</button><button id="clear">Clear everything</button></div></section>
+</div>
+<div id="out" aria-live="polite"></div>
+</main>
+<script>
+const EX={income:3000,bills:[["Rent",1250],["Utilities",140],["Phone",55],["Car insurance",110],["Internet",60],["Subscriptions",35]],
+ess:[["Groceries",400],["Gas and transport",150]],wants:[["Eating out",60],["Fun and hobbies",40],["Personal care",20]],
+debts:[["Store card",600,27,30],["Visa",2400,24,72],["Credit card B",900,19,35],["Medical bill",1100,0,40]],ef:75,extra:428,method:"snowball"};
+let S;
+try{S=JSON.parse(localStorage.getItem("bpg1"))}catch(e){}
+if(!S||!S.bills)S=JSON.parse(JSON.stringify(EX));
+const $=id=>document.getElementById(id);
+const num=v=>{v=parseFloat(v);return isFinite(v)&&v>0?v:0};
+const $$=n=>"$"+Math.round(n).toLocaleString("en-US");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const save=()=>{try{localStorage.setItem("bpg1",JSON.stringify(S))}catch(e){}};
+
+function renderLists(){
+ for(const k of ["bills","ess","wants"]){
+  $("L_"+k).innerHTML=S[k].map((r,i)=>`<div class="row r2"><input aria-label="Name" data-k="${k}" data-i="${i}" data-f="0" value="${esc(r[0])}" placeholder="Name"><input aria-label="Amount" type="number" min="0" inputmode="decimal" data-k="${k}" data-i="${i}" data-f="1" value="${r[1]}"><button class="x" data-del="${k}" data-i="${i}" aria-label="Remove ${esc(r[0])}">×</button></div>`).join("");
+ }
+ $("L_debts").innerHTML=S.debts.map((r,i)=>`<div class="row r4"><input aria-label="Debt name" data-k="debts" data-i="${i}" data-f="0" value="${esc(r[0])}" placeholder="Name">`+[1,2,3].map(f=>`<input aria-label="${["","Balance","APR","Minimum"][f]}" type="number" min="0" inputmode="decimal" data-k="debts" data-i="${i}" data-f="${f}" value="${r[f]}">`).join("")+`<button class="x" data-del="debts" data-i="${i}" aria-label="Remove ${esc(r[0])}">×</button></div>`).join("");
+}
+function fillTop(){$("inc").value=S.income||"";$("ef").value=S.ef||"";$("ex").value=S.extra||"";$("meth").value=S.method}
+
+function sim(method,extra){
+ const d=S.debts.filter(x=>num(x[1])>0).map(x=>({n:x[0]||"Debt",b:num(x[1]),r:num(x[2]),m:num(x[3])}));
+ if(!d.length)return{months:0,interest:0,order:[],sched:[]};
+ const budget=d.reduce((a,x)=>a+x.m,0)+extra;let interest=0,month=0,order=[],sched=[];
+ while(d.some(x=>x.b>0.005)&&month<600){
+  month++;
+  d.forEach(x=>{if(x.b>0){const i=x.b*x.r/1200;x.b+=i;interest+=i}});
+  let avail=budget;
+  d.forEach(x=>{if(x.b>0){const p=Math.min(x.m,x.b);x.b-=p;avail-=p}});
+  const q=d.filter(x=>x.b>0.005).sort(method==="snowball"?(a,b)=>a.b-b.b:(a,b)=>b.r-a.r);
+  for(const x of q){if(avail<=0)break;const p=Math.min(avail,x.b);x.b-=p;avail-=p}
+  d.forEach(x=>{if(x.b<=0.005&&!x.done){x.done=1;x.b=0;order.push({n:x.n,month})}});
+  if(month<=6)sched.push(d.map(x=>x.b));
+ }
+ return{months:month,interest,order,sched,names:d.map(x=>x.n),never:d.some(x=>x.b>0.005)};
+}
+const when=m=>{const t=new Date();t.setMonth(t.getMonth()+m);return t.toLocaleDateString("en-US",{month:"long",year:"numeric"})};
+
+function calc(){
+ const inc=num(S.income),sum=a=>a.reduce((t,r)=>t+num(r[1]),0);
+ const bills=sum(S.bills),ess=sum(S.ess),wants=sum(S.wants),mins=S.debts.reduce((t,r)=>t+num(r[3]),0);
+ const ef=num(S.ef),extra=num(S.extra);
+ const needs=bills+ess+mins,goals=ef+extra,spent=needs+wants+goals,left=inc-spent;
+ const pct=v=>inc?Math.round(v/inc*100):0;
+ let st;
+ if(!inc)st=`<div class="status bad">Enter your monthly income to start.</div>`;
+ else if(Math.abs(left)<0.5)st=`<div class="status ok">Every dollar has a job.<span class="sub">Income ${$$(inc)} minus spending ${$$(spent)} equals $0.</span></div>`;
+ else if(left>0)st=`<div class="status bad">${$$(left)} is still unassigned.<span class="sub">Give it a job: send it to debt or savings.</span><div class="tools"><button class="noprint" id="toDebt">Add ${$$(left)} to extra debt payment</button></div></div>`;
+ else st=`<div class="status bad">You are over budget by ${$$(-left)}.<span class="sub">${needs>inc?"Your needs alone are more than your income. Look at bills and debt minimums first.":"Trim wants or goals until the total matches your income."}</span></div>`;
+ const w=v=>Math.max(0,inc?v/Math.max(inc,spent)*100:0);
+ const rows=[["Fixed bills",bills],["Everyday essentials",ess],["Debt minimums",mins]].map(r=>`<tr><td>${r[0]}</td><td>Need</td><td class="n">${$$(r[1])}</td><td class="n">${pct(r[1])}%</td></tr>`).join("")
+  +`<tr><td>Wants</td><td>Want</td><td class="n">${$$(wants)}</td><td class="n">${pct(wants)}%</td></tr><tr><td>Emergency fund</td><td>Goal</td><td class="n">${$$(ef)}</td><td class="n">${pct(ef)}%</td></tr><tr><td>Extra debt payment</td><td>Goal</td><td class="n">${$$(extra)}</td><td class="n">${pct(extra)}%</td></tr>`
+  +`<tr class="tot"><td>Total planned</td><td></td><td class="n">${$$(spent)}</td><td class="n">${pct(spent)}%</td></tr>`;
+ let h=`<section><h2>Your budget</h2>${st}
+ <div class="bar" role="img" aria-label="Needs ${pct(needs)} percent, wants ${pct(wants)} percent, goals ${pct(goals)} percent of income"><i style="width:${w(needs)}%;background:var(--need)"></i><i style="width:${w(wants)}%;background:var(--want)"></i><i style="width:${w(goals)}%;background:var(--goal)"></i></div>
+ <div class="leg"><span><b style="background:var(--need)"></b>Needs ${$$(needs)} (${pct(needs)}%)</span><span><b style="background:var(--want)"></b>Wants ${$$(wants)} (${pct(wants)}%)</span><span><b style="background:var(--goal)"></b>Goals ${$$(goals)} (${pct(goals)}%)</span></div>
+ <table><thead><tr><th>Category</th><th>Group</th><th class="n">Amount</th><th class="n">% of income</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+
+ const has=S.debts.some(x=>num(x[1])>0);
+ if(has){
+  const A=sim(S.method,extra),o=S.method==="snowball"?"avalanche":"snowball",B=sim(o,extra);
+  const lab=m=>m==="snowball"?"Snowball":"Avalanche";
+  if(A.never)h+=`<section><h2>Debt payoff</h2><div class="status bad">These payments do not outpace interest.<span class="sub">Raise the extra debt payment or a minimum, then check again.</span></div></section>`;
+  else{
+   const diff=Math.round(B.interest-A.interest);
+   h+=`<section><h2>Debt payoff plan</h2><p class="hint">${lab(S.method)} method with ${$$(extra)} extra per month on top of minimums.</p>
+   <div class="cards"><div class="card pick"><small>Debt-free</small><span class="big">${when(A.months)}</span><small>${A.months} months</small></div><div class="card"><small>Total interest (est.)</small><span class="big">${$$(A.interest)}</span><small>${lab(S.method)}</small></div></div>
+   <table><thead><tr><th>Payoff order</th><th class="n">Month paid off</th><th class="n">Date</th></tr></thead><tbody>${A.order.map((x,i)=>`<tr><td>${i+1}. ${esc(x.n)}</td><td class="n">${x.month}</td><td class="n">${when(x.month)}</td></tr>`).join("")}</tbody></table>
+   <h3 style="margin:16px 0 6px;font-size:16px">First 6 months: balance after payment</h3><div style="overflow-x:auto"><table><thead><tr><th>Month</th>${A.names.map(n=>`<th class="n">${esc(n)}</th>`).join("")}</tr></thead><tbody>${A.sched.map((r,i)=>`<tr><td>${i+1}</td>${r.map(v=>`<td class="n">${$$(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+   <h3 style="margin:16px 0 6px;font-size:16px">Method comparison</h3>
+   <table><thead><tr><th></th><th class="n">${lab(S.method)}</th><th class="n">${lab(o)}</th></tr></thead><tbody><tr><td>Months to debt-free</td><td class="n">${A.months}</td><td class="n">${B.months}</td></tr><tr><td>Total interest</td><td class="n">${$$(A.interest)}</td><td class="n">${$$(B.interest)}</td></tr></tbody></table>
+   <p class="note">${Math.abs(diff)<1?"Both methods cost about the same here, so choose the one that keeps you motivated.":(diff>0?`${lab(S.method)} costs about ${$$(diff)} less in interest than ${lab(o)}.`:`${lab(o)} would save about ${$$(-diff)} in interest. Snowball gives earlier wins; avalanche saves the most money.`)}</p></section>`;
+  }
+ }
+ h+=`<div class="tools noprint"><button class="pri" onclick="window.print()">Print or save as PDF</button></div><p class="note">Estimates use monthly compounding and fixed payments. Lender figures will differ slightly. This is a planning tool, not financial advice. Your numbers stay in your browser.</p>`;
+ $("out").innerHTML=h;
+ const b=$("toDebt");if(b)b.onclick=()=>{S.extra=extra+left;fillTop();save();calc()};
+}
+
+document.addEventListener("input",e=>{
+ const t=e.target;
+ if(t.id==="inc")S.income=num(t.value);else if(t.id==="ef")S.ef=num(t.value);else if(t.id==="ex")S.extra=num(t.value);
+ else if(t.dataset.k){const f=+t.dataset.f;S[t.dataset.k][+t.dataset.i][f]=f===0?t.value:num(t.value)}
+ else return;
+ save();calc();
+});
+$("meth").onchange=e=>{S.method=e.target.value;save();calc()};
+document.addEventListener("click",e=>{
+ const t=e.target;
+ if(t.dataset.add){const k=t.dataset.add;S[k].push(k==="debts"?["",0,0,0]:["",0]);renderLists();save();calc()}
+ if(t.dataset.del){S[t.dataset.del].splice(+t.dataset.i,1);renderLists();save();calc()}
+});
+$("reset").onclick=()=>{S=JSON.parse(JSON.stringify(EX));renderLists();fillTop();save();calc()};
+$("clear").onclick=()=>{S={income:0,bills:[["",0]],ess:[["",0]],wants:[["",0]],debts:[["",0,0,0]],ef:0,extra:0,method:"snowball"};renderLists();fillTop();save();calc()};
+renderLists();fillTop();calc();
+</script>
+</body>
+</html>
